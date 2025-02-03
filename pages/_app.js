@@ -1,41 +1,74 @@
-import BLOG from 'blog.config'
-import 'animate.css'
+// import '@/styles/animate.css' // @see https://animate.style/
 import '@/styles/globals.css'
-// custom
+import '@/styles/utility-patterns.css'
+
 // core styles shared by all of react-notion-x (required)
-import 'react-notion-x/src/styles.css'
-import '@/styles/notion.css' //  重写部分样式
+import '@/styles/notion.css' //  重写部分notion样式
+import 'react-notion-x/src/styles.css' // 原版的react-notion-x
 
-// used for collection views (optional)
-import 'rc-dropdown/assets/index.css'
-// used for code syntax highlighting (optional)
-import 'prismjs/themes/prism-okaidia.css'
-// used for rendering equations (optional)
-import 'katex/dist/katex.min.css'
-import dynamic from 'next/dynamic'
+import useAdjustStyle from '@/hooks/useAdjustStyle'
 import { GlobalContextProvider } from '@/lib/global'
-import { DebugPanel } from '@/components/DebugPanel'
-import { ThemeSwitch } from '@/components/ThemeSwitch'
+import { getBaseLayoutByTheme } from '@/themes/theme'
+import { useRouter } from 'next/router'
+import { useCallback, useMemo } from 'react'
+import { getQueryParam } from '../lib/utils'
 
-const Ackee = dynamic(() => import('@/components/Ackee'), { ssr: false })
-const Gtag = dynamic(() => import('@/components/Gtag'), { ssr: false })
-const Busuanzi = dynamic(() => import('@/components/Busuanzi'), { ssr: false })
-const GoogleAdsense = dynamic(() => import('@/components/GoogleAdsense'), { ssr: false })
+// 各种扩展插件 这个要阻塞引入
+import BLOG from '@/blog.config'
+import ExternalPlugins from '@/components/ExternalPlugins'
+import SEO from '@/components/SEO'
+import { zhCN } from '@clerk/localizations'
+import dynamic from 'next/dynamic'
+// import { ClerkProvider } from '@clerk/nextjs'
+const ClerkProvider = dynamic(() =>
+  import('@clerk/nextjs').then(m => m.ClerkProvider)
+)
 
+/**
+ * App挂载DOM 入口文件
+ * @param {*} param0
+ * @returns
+ */
 const MyApp = ({ Component, pageProps }) => {
-  return (
-    <GlobalContextProvider>
-        {BLOG.THEME_SWITCH && <ThemeSwitch/>}
-        {BLOG.DEBUG && <DebugPanel/>}
-        {BLOG.ANALYTICS_ACKEE_TRACKER && <Ackee />}
-        {BLOG.ANALYTICS_GOOGLE_ID && <Gtag />}
-        {JSON.parse(BLOG.ANALYTICS_BUSUANZI_ENABLE) && <Busuanzi/>}
-        {BLOG.ADSENSE_GOOGLE_ID && <GoogleAdsense/>}
-        {/* FontawesomeCDN */}
-        <link href={BLOG.FONT_AWESOME_PATH} rel="stylesheet" referrerPolicy="no-referrer" />
-        <Component {...pageProps} />
+  // 一些可能出现 bug 的样式，可以统一放入该钩子进行调整
+  useAdjustStyle()
 
+  const route = useRouter()
+  const theme = useMemo(() => {
+    return (
+      getQueryParam(route.asPath, 'theme') ||
+      pageProps?.NOTION_CONFIG?.THEME ||
+      BLOG.THEME
+    )
+  }, [route])
+
+  // 整体布局
+  const GLayout = useCallback(
+    props => {
+      const Layout = getBaseLayoutByTheme(theme)
+      return <Layout {...props} />
+    },
+    [theme]
+  )
+
+  const enableClerk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  const content = (
+    <GlobalContextProvider {...pageProps}>
+      <GLayout {...pageProps}>
+        <SEO {...pageProps} />
+        <Component {...pageProps} />
+      </GLayout>
+      <ExternalPlugins {...pageProps} />
     </GlobalContextProvider>
+  )
+  return (
+    <>
+      {enableClerk ? (
+        <ClerkProvider localization={zhCN}>{content}</ClerkProvider>
+      ) : (
+        content
+      )}
+    </>
   )
 }
 
