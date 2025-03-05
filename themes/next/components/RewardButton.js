@@ -1,4 +1,3 @@
-import React from 'react'
 import Image from 'next/image'
 
 /**
@@ -8,14 +7,10 @@ import Image from 'next/image'
  */
 const RewardButton = () => {
   const openPopover = () => {
-    if (window) {
-      document.getElementById('reward-qrcode').classList.remove('hidden')
-    }
+    document.getElementById('reward-qrcode').classList.remove('hidden')
   }
   const closePopover = () => {
-    if (window) {
-      document.getElementById('reward-qrcode').classList.add('hidden')
-    }
+    document.getElementById('reward-qrcode').classList.add('hidden')
   }
   return (
     <div className='justify-center'>

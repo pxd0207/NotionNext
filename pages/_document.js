@@ -1,26 +1,37 @@
 // eslint-disable-next-line @next/next/no-document-import-in-page
-import Document, { Html, Head, Main, NextScript } from 'next/document'
 import BLOG from '@/blog.config'
-import CommonScript from '@/components/CommonScript'
+import Document, { Head, Html, Main, NextScript } from 'next/document'
 
 class MyDocument extends Document {
-  static async getInitialProps (ctx) {
+  static async getInitialProps(ctx) {
     const initialProps = await Document.getInitialProps(ctx)
     return { ...initialProps }
   }
 
-  render () {
+  render() {
     return (
-      <Html lang={BLOG.LANG} className='test'>
+      <Html lang={BLOG.LANG}>
         <Head>
-          <link rel='icon' href='/favicon.ico' />
-          <link rel='icon' href='/favicon.svg' type='image/svg+xml' />
-          {/* 谷歌字体镜像 */}
-          <link href="https://fonts.loli.net/css2?family=Noto+Serif+SC&display=swap" rel="stylesheet"/>
-          <CommonScript />
+          {/* 预加载字体 */}
+          {BLOG.FONT_AWESOME && (
+            <>
+              <link
+                rel='preload'
+                href={BLOG.FONT_AWESOME}
+                as='style'
+                crossOrigin='anonymous'
+              />
+              <link
+                rel='stylesheet'
+                href={BLOG.FONT_AWESOME}
+                crossOrigin='anonymous'
+                referrerPolicy='no-referrer'
+              />
+            </>
+          )}
         </Head>
 
-        <body className={`${BLOG.FONT} bg-day dark:bg-night`}>
+        <body>
           <Main />
           <NextScript />
         </body>
